@@ -41,14 +41,16 @@
 #
 # Of course, all tags for each object are also copied.
 #
-# Since this is designed to work with historical data, it tends to grab more than
-# it needs. Specifically, old, deleted nodes will cause ways and relations to be
-# included (etc.). It does not thoroughly resolve relations because that could get
-# out of hand. And as mentioned, it doesn't even try to resolve changesets.
+# Since this is designed to work with historical data, it tends to grab more
+# than it needs. Specifically, old, deleted nodes will cause ways and relations
+# to be included (etc.). It does not thoroughly resolve relations because that
+# could get out of hand. And as mentioned, it doesn't even try to resolve 
+# changesets.
 #
-# Warning: I am a crusty old C programmer. I like C. I want to rewrite this in C but
-#          Python's more portable and I want to use parts of the code in another
-#          script that has to be Python. So this is not going to be very Pythonic.
+# Warning: I am a crusty old C programmer. I like C. I want to rewrite this in 
+#          C but Python's more portable and I want to use parts of the code in 
+#          another script that has to be Python. So this is not going to be very
+#          Pythonic.
 #
 #          The script is also designed to work on the 500GB+ full-planet.osm
 #          so I've sacrificed modularity for speed (since Python doesn't do
@@ -69,13 +71,11 @@
 #
 # Hawaii - just Oahu
 # -i hawaii.osm.bz2 -l -158.29 -r -157.661 -t 21.73 -b 21.2 -e 2009-01-01 
+# -i test.osm -l -158.29 -r -157.661 -t 21.73 -b 21.2 -e 2009-01-01 
 
 # Import modules
 import sys
-import os
-import math
 import time
-import string
 
 class objTypes:
     (nul, node, way, relation, changeset, eof) = range(0, 6)
@@ -188,11 +188,10 @@ except:
     print "Failed to initialize OSMReader"
     exit(-1)
 
-try:    
+if show_stats:
+    print "Step 1: List nodes in BBOX"
 
-    if show_stats:
-        print "Step 1: List nodes in BBOX"
-
+try:
     #for uline in inputfile:
     while True:
     
@@ -202,9 +201,9 @@ try:
     
         if inputfile.objType == objTypes.eof:
             break
-
+    
         obj_count += 1
-
+    
         if (show_stats):
             if (obj_count % 250000) == 0:
                 print "Processed " + str(obj_count) + " objects."
@@ -212,72 +211,72 @@ try:
         # Is the node within the timestamp?
         if (inputfile.objTimestamp < start_date or inputfile.objTimestamp > end_date):
             continue
-
+    
         # 
         # Node
         #
         if inputfile.objType == objTypes.node:
             if inputfile.objID > max_node_id:
                 max_node_id = inputfile.objID
-
+    
             if inputfile.objID < min_node_id:
                 min_node_id = inputfile.objID
             
             # Is the node in the BBOX?
             if inputfile.objLat < bbox_bottom or inputfile.objLat > bbox_top:
                 continue
-
+    
                 # Is the node in the BBOX?
             if inputfile.objLong < bbox_left or inputfile.objLong > bbox_right:
                 continue
-
+    
             node_list.add(inputfile.objID)
             
             changeset_list.add(inputfile.objChangeset)
-
+    
             # Save the highest version number
             if not output_history:
                 node_ver_dict[inputfile.objID] = inputfile.objVersion
             
         # Way
         elif inputfile.objType == objTypes.way:
-
+    
             # Does the way contain a node we are keeping?            
             for node_id in inputfile.objWay_nodes:
                 if node_id in node_list:
                     way_list.add(inputfile.objID)
-
+    
                     changeset_list.add(inputfile.objChangeset)
-
+    
                     # This adds nodes not in BBOX but part of way that intersects it
                     # This really slows things down!
                     #if resolve:
                     #    node_list.update(inputfile.objWay_nodes)
-
-                    break;                            
+    
+                    break
             
-
+    
         # Relation
         elif inputfile.objType == objTypes.relation:
             if not resolve:
-                continue;
-
+                continue
+    
             relation_list.add(inputfile.objID)
             changeset_list.add(inputfile.objChangeset)
             node_list.update(relation_nodes)
             way_list.update(relation_ways)
-
+    
     # while True:
-
+    
     if show_stats:    
         print 'Bytes read from OSM file: ' + str(inputfile.getBytesRead())
         print 'Objects processed: ' + str(obj_count)
-
+    
         print "Changeset list count: " + str(len(changeset_list))
         print "Node list count: " + str(len(node_list))
         print "Way list count: " + str(len(way_list))
         print "Relation list count: " + str(len(relation_list))
-
+    
     del inputfile
 
 except Exception, ErrorDesc:
@@ -384,8 +383,8 @@ try:
         # Changeset
         #
         elif element == 'changeset':
-            s = line.find('id="',5) + 4
-            e = line.find('"',s)
+            s = line.find('id="', 5) + 4
+            e = line.find('"', s)
             cs_id = int(line[s:e])
             
             if output_changesets and cs_id in changeset_list:
