@@ -108,7 +108,7 @@ class OSMReader:
             #       This will break in that situation.
             newb = self.fp.read(self.buffsize)
 
-            # Hit the end of the file, need to return nada
+            # Hit the end of the file, need to return zero-length
             if len(newb) == 0:
                 return ''
 
@@ -137,8 +137,10 @@ class OSMReader:
         self.bufpos = cb + 1
 
         # Very rare - happens if '>' is last character in buffer
-        if self.bufpos >= self.buffsize:
-            self.buffer = self.fp.read(self.buffsize)
+        if self.bufpos >= len(self.buffer):
+            newb = self.fp.read(self.buffsize)
+            self.buffer = self.buffer + newb
+            self.bread += len(newb)
             self.bufpos = 0
 
         self.line_count += 1
@@ -344,11 +346,11 @@ class OSMReader:
                 memtype = line[s:e]
                                 
                 if memtype == 'node':
-                    self.objRel_memtype.add(objTypes.node)
+                    self.objRel_memtypes.append(objTypes.node)
                 elif memtype == 'way':
-                    self.objRel_memtype.add(objTypes.way)
+                    self.objRel_memtypes.append(objTypes.way)
                 elif memtype == 'relation':
-                    self.objRel_memtype.add(objTypes.relation)
+                    self.objRel_memtypes.append(objTypes.relation)
 
             # if element==...
 
