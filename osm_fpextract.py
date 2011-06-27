@@ -293,6 +293,7 @@ try:
     # Input is maybe a very big file
     inputfile = OSMReader(inFile)
     
+    # OSM XML Header stuff - made up as usual
     print '<?xml version="1.0" encoding="UTF-8"?>'
     # "2011-02-16T01:11:04Z"  "%Y-%m-%dT%H:%M:%SZ"
     timestamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
@@ -305,7 +306,6 @@ try:
     line_count = 0
     
     while True:
-    
         # Read one XML tag without depending on line breaks 
         # (so this works with history files)
         line = inputfile.getNextTag()
@@ -316,7 +316,7 @@ try:
             break
 
         if line[1] == '/':
-            element = line[1:line.find('>',1)]
+            element = line[1:line.find('>',1)] # FIXME!
         else:
             element = line[1:line.find(' ',1)]
 
@@ -324,6 +324,8 @@ try:
         # Node
         # 
         if element == 'node':
+            keep = False
+            
             s = line.find('id="',5) + 4
             e = line.find('"',s)
             node_id = int(line[s:e])
@@ -335,80 +337,71 @@ try:
                     e = line.find('"',s)
                     ver = int(line[s:e])
                     if node_ver_dict[node_id] == ver:
-                        keep = True
                         print "  " + line.encode("utf-8","ignore")
-                    else:
-                        keep = False
+                        if not line[-2] == '/':
+                            keep = True
                 else:            
-                    keep = True
                     print "  " + line.encode("utf-8","ignore") 
-
-            else:
-                keep = False
-                
+                    if not line[-2] == '/':
+                        keep = True
+              
 
         #
         # Way
         #
         elif element == 'way':
+            keep = False
+                
             s = line.find('id="',5) + 4
             e = line.find('"',s)
             way_id = int(line[s:e])
             
             if way_id in way_list:
+                print "  " + line.encode("utf-8","ignore")
                 keep = True
-                print "  " + line.encode("utf-8","ignore") 
-            else:
-                keep = False
             
         #
         # Relation
         #
         elif element == 'relation':
+            keep = False
             s = line.find('id="',5) + 4
             e = line.find('"',s)
             rel_id = int(line[s:e])
             
             if rel_id in relation_list:
-                keep = True
                 print "  " + line.encode("utf-8","ignore") 
-            else:
-                keep = False
-        elif element == '/relation':
-            if keep:
-                print "  " + line.encode("utf-8","ignore")
-            keep = False
+                keep = True
             
         #
         # Changeset
         #
         elif element == 'changeset':
+            keep = False
+                
             s = line.find('id="', 5) + 4
             e = line.find('"', s)
             cs_id = int(line[s:e])
             
             if output_changesets and cs_id in changeset_list:
-                keep = True
                 print "    " + line.encode("utf-8","ignore") 
-            else:
-                keep = False
+                keep = True
+
 
         elif element == 'tag' or element == 'nd' or element == 'member':
             if keep:
-                print "  " + line.encode("utf-8","ignore") 
+                print "    " + line.encode("utf-8","ignore") 
 
         elif element == '/node' or element == '/way' or element == '/relation' or element == '/changeset':
             if keep:
                 print "  " + line.encode("utf-8","ignore") 
+                
             keep = False
             
         else :
             if keep:
                 print "  " + line.encode("utf-8","ignore") 
             
-        if line[-2] == '/' or element[1] == '/':
-            keep = False
-
     # While True:
     
     print '</osm>\n'
