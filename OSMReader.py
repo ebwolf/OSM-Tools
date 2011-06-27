@@ -11,9 +11,9 @@
 #  material nor shall the fact of distribution constitute any such warranty, 
 #  and no responsibility is assumed by the USGS in connection therewith.
 #
-import fileinput, bz2, gzip
-import sys, os
-import math, time, string
+import bz2, gzip
+import os
+import string
 
 from datetime import date
 
@@ -58,10 +58,12 @@ class OSMReader:
             print "Error opening " + filename + "."
             exit(-1)
             
-        self.buffsize = 16384*512 # How many bytes to keep around in the buffer
-        self.bufpos = 0
-        self.buffer = self.fp.read(self.buffsize)
-        self.bread = len(self.buffer)
+        self.buffer_size = 16384*512 # How many bytes to keep around in the buffer
+        self.buffer_pos = 0
+        self.buffer = self.fp.read(self.buffer_size)
+        self.bytes_read = len(self.buffer)
+        self.buffer_count = 0
+        
         self.line_count = 0
         
         self.tag = ""
@@ -94,11 +96,35 @@ class OSMReader:
         return self.tag
         
     def getBytesRead(self):
-        return self.bread
+        return self.bytes_read
 
+    def findTagPunc(self, punc):
+        # Return the position of the next 'punc'
+        # Ignores punc in quotes.
+        # Assumes buffer_pos does not point into a quoted string.
+        in_quote = False
+        
+        pos = self.buffer_pos
+        max_pos = len(self.buffer)
+        
+        while pos < max_pos:
+            if self.buffer[pos] == '"':
+                if in_quote:
+                    in_quote = False
+                else:
+                    in_quote = True
+                
+            if not in_quote:
+                if self.buffer[pos] == punc:
+                    return pos
+       
+            pos += 1
+            
+        return -1
+    
     def getNextTag(self):
         # find the close bracket
-        cb = self.buffer.find('>', self.bufpos)
+        cb = self.findTagPunc('>')
         
         # Hit the end of the buffer, need to reload
         if cb < 0:
@@ -106,27 +132,29 @@ class OSMReader:
             # Read in anohter chunk of the file
             # NOTE: It's possible that an XML tag will be greater than buffsize
             #       This will break in that situation.
-            newb = self.fp.read(self.buffsize)
-
+            newb = self.fp.read(self.buffer_size)
+            
             # Hit the end of the file, need to return zero-length
             if len(newb) == 0:
                 return ''
 
-            self.bread = self.bread + len(newb)
+            self.buffer_count += 1
+            
+            self.bytes_read = self.bytes_read + len(newb)
             
             # Copy the end of the buffer to head, tack on the new stuff
-            self.buffer = self.buffer[self.bufpos:]+newb
+            self.buffer = self.buffer[self.buffer_pos:]+newb
             
-            self.bufpos = 0
+            self.buffer_pos = 0
             
             # Check again for the close bracket
-            cb = self.buffer.find('>', self.bufpos)
+            cb = self.findTagPunc('>')
             
             if cb < 0:
                 return ''
 
         # Pick out the tag and clean it up                
-        self.tag = self.buffer[self.bufpos:cb+1]
+        self.tag = self.buffer[self.buffer_pos:cb+1]
         self.tag = self.tag.strip()
         if not isinstance(self.tag, unicode):
             self.tag = unicode(self.tag, "UTF-8","ignore")
@@ -134,14 +162,15 @@ class OSMReader:
         #self.tag = self.tag.decode("UTF-8","ignore")
 
         # shift our buffer pointer up        
-        self.bufpos = cb + 1
+        self.buffer_pos = cb + 1
 
         # Very rare - happens if '>' is last character in buffer
-        if self.bufpos >= len(self.buffer):
-            newb = self.fp.read(self.buffsize)
-            self.buffer = self.buffer + newb
-            self.bread += len(newb)
-            self.bufpos = 0
+        if self.buffer_pos >= len(self.buffer):
+            newb = self.fp.read(self.buffer_size)
+            self.buffer = newb
+            self.buffer_count += 1
+            self.bytes_read += len(newb)
+            self.buffer_pos = 0
 
         self.line_count += 1
             
@@ -263,15 +292,15 @@ class OSMReader:
             
             if line == '':
                 self.objType = objTypes.eof
-                break;
+                break
 
             if line[1] == '/':
-                element = line[1:line.find('>',1)]
+                element = line[1:line.find('>',1)] # FIXME!
             else:
                 element = line[1:line.find(' ',1)]
                 
             if element == 'bound' or element == '?xml' or element == 'osm':
-                continue;
+                continue
 
             if element == 'node':
                 self.objType = objTypes.node
@@ -283,7 +312,7 @@ class OSMReader:
                 self.objType = objTypes.relation
                 
 
-            if element == 'node' or element == 'way' or element == 'changeset' or element == 'relation':
+            if element == 'node' or element == 'way' or element == 'relation':
                 s = line.find('id="',4) + 4
                 e = line.find('"',s)
                 
@@ -302,6 +331,22 @@ class OSMReader:
                 e = line.find('"',s)
                 self.objVersion = int(line[s:e])
                 
+            elif element == 'changeset':
+                s = line.find('id="',4) + 4
+                e = line.find('"',s)
+                
+                self.objID = int(line[s:e])
+
+                # For Changeset, use "Created At" for Timestamp
+                s = line.find('created_at="',4) + 12
+                e = line.find('T',s)
+                (year, month, day) = line[s:e].split('-')
+                self.objTimestamp = date(int(year), int(month), int(day))
+
+                #
+                # RESOLVE: Probably should parse the rest of the changeset tags, but not needed now
+                #
+                
             # 
             # Node
             #
@@ -313,6 +358,7 @@ class OSMReader:
                 s = line.find('lon="',4) + 5
                 e = line.find('"',s)
                 self.objLong = float(line[s:e])
+    
 
             elif element == 'tag':
                 s = line.find('k="',4) + 3
@@ -355,7 +401,10 @@ class OSMReader:
             # if element==...
 
             # End of object - break out of loop
-            if element[1] == '/' or line[-2] == '/':
-                break;
+            if element in {'/node', '/way', '/relation'}:
+                break
+            
+            if element in {'node', 'way', 'relation'} and line[-2] == '/':
+                break
         
 # class OSMReader
