@@ -5,18 +5,23 @@
 #
 # e.g., osm_chunker.py full-planet.osm
 #
-#       Generates four new files:
-#          full-planet-nodes.osm
-#          full-planet-ways.osm
-#          full-planet-relations.osm
-#          full-planet-changesets.osm
+#       Generates four new file sets:
+#          full-planet-nodes.osm.xxxx
+#          full-planet-ways.osm.xxxx
+#          full-planet-relations.osm.xxxx
+#          full-planet-changesets.osm.xxxx
 #
-# The resulting OSM files aren't correct XML. But that doesn't really matter.
+# The resulting OSM files aren't correct XML. But that doesn't really matter. 
+# Each file contains only one object type. It also contains a maximum of 500,000
+# of those objects. This limits each file to under 300,000MB.
+#
+# One "enhancement" that might be handy would be to add a bounding box tag to the start
+# of each file. But it might make more sense to do that later on.
 #
 # This allows for faster processing based on the separate files when
 # extracting footprints, especially when resolving ways and relations.
 #
-# It also provides a separate changeset file for exploring user contributions.
+# It also keeps the changesets for exploring user contributions.
 #
 # Uses the OSMReader module so that it can real a compressed file if necessary
 #
@@ -26,7 +31,7 @@
 #
 #---------------------------------------------------------------------------
 #   Name:       osm_chunker.py
-#   Version:    1.0
+#   Version:    1.1
 #   Authored    By: Eric Wolf
 #   Copyright:  Public Domain.
 #---------------------------------------------------------------------------
@@ -76,6 +81,17 @@ outFile = open(outFilename, "a")
 working_on = cUnknown
 line_count = 0
 
+nfcount = 0
+wfcount = 0
+rfcount = 0
+cfcount = 0
+
+nodes = 0
+ways = 0
+rels = 0
+csets = 0
+
+
 while True:
 
     # Read one XML tag without depending on line breaks 
@@ -96,39 +112,92 @@ while True:
     # Node
     # 
     if element == 'node':
+        nodes += 1
+         
+        #
+        # 500,000 Nodes should be < 100MB (typically)
+        #
+        if (nodes % 10000) == 0:
+            nfcount += 1
+            outFile.close()
+    
+            print "Node Files: {:05d}   Nodes: {:d}".format(nfcount, nodes)
+            outFilename = root + "-nodes.osm.{:05d}".format(nfcount)
+            outFile.close()
+            outFile = open(outFilename, "w")
+       
         if working_on != cNodes:
-           outFile.close()
-           outFilename = root + "-nodes.osm"
-           outFile = open(outFilename, "a")
-           working_on = cNodes
+            outFile.close()
+            outFilename = root + "-nodes.osm.{:05d}".format(nfcount)
+            outFile = open(outFilename, "a")
+
+        working_on = cNodes
            
     elif element == 'way':
+        ways += 1
+         
+        #
+        # 500,000 Ways should be < ???MB (typically)
+        #
+        if (ways % 10000) == 0:
+            wfcount += 1
+            outFile.close()
+    
+            print "Way Files: {:05d}   Way: {:d}".format(wfcount, ways)
+            outFilename = root + "-ways.osm.{:05d}".format(wfcount)
+            outFile.close()
+            outFile = open(outFilename, "w")
+       
         if working_on != cWays:
-           outFile.close()
-           outFilename = root + "-ways.osm"
-           outFile = open(outFilename, "a")
-           working_on = cWays
+            outFile.close()
+            outFilename = root + "-ways.osm.{:05d}".format(wfcount)
+            outFile = open(outFilename, "a")
+
+        working_on = cWays
 
     elif element == 'relation':
+        rels += 1
+    
+        #
+        # 500,000 Relations should be < ???MB (typically)
+        #
+        if (rels % 1000000) == 0:
+            rfcount += 1
+            outFile.close()
+    
+            print "Relations Files: {:05d}   Relations: {:d}".format(wfcount, ways)
+            outFilename = root + "-relations.osm.{:05d}".format(wfcount)
+            outFile.close()
+            outFile = open(outFilename, "w")
+            
         if working_on != cRelations:
-           outFile.close()
-           outFilename = root + "-relations.osm"
-           outFile = open(outFilename, "a")
-           working_on = cRelations
+            outFile.close()
+            outFilename = root + "-relations.osm.{:05d}".format(rfcount)
+            outFile = open(outFilename, "a")
+
+        working_on = cRelations
 
     elif element == 'changeset':
+        csets += 1
+         
+        #
+        # 500,000 Changesets should be < ???MB (typically)
+        #
+        if (csets % 1000000) == 0:
+            cfcount += 1
+            outFile.close()
+    
+            print "Changeset Files: {:05d}   Changesets: {:d}".format(cfcount, csets)
+            outFilename = root + "-changesets.osm.{:05d}".format(cfcount)
+            outFile.close()
+            outFile = open(outFilename, "w")
+            
         if working_on != cChangesets:
-           outFile.close()
-           outFilename = root + "-changesets.osm"
-           outFile = open(outFilename, "a")
-           working_on = cChangesets
-
-    #else:
-        #if outFile.closed == False:
-        #    outFile.close()
-        #outFilename = root+"-junk.osm"
-        #outFile = open(outFilename, "a")
-        #working_on = cUnknown
+            outFile.close()
+            outFilename = root + "-changesets.osm.{:05d}".format(cfcount)
+            outFile = open(outFilename, "a")
+            
+        working_on = cChangesets
         
     print >> outFile, line.encode("utf-8","ignore")
     
@@ -136,4 +205,8 @@ outFile.close()
 
 elapsed = time.clock() - start
 
+print "Nodes: {:d}".format(nodes)
+print "Ways: {:d}".format(ways)
+print "Relations: {:d}".format(rels)
+print "Changesets: {:d}".format(csets)
 print str(line_count) + " lines read in " + str(elapsed) + " seconds"
