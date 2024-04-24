@@ -1,28 +1,26 @@
-NOTE: Working cleaning this up.
-
-OSM-Tools
+2024 Update: Cleaning up, getting working with Python 3.8, and pylinting
 
 This is a set of tools specfically designed for working with the OSM Full Planet
-file. The tools are designed to work with a fairly stock Python install, including
-the version installed with ArcGIS 9.3.1.
+file. The tools are designed to work with a fairly stock Python3 install, 
+maybe not the version installed with Esri products. I don't have access to those any more.
 
-OSMReader.py - a class for transparently handling the OSM Full Planet which has
+osm_reader.py - OsmReader is a class for transparently handling the OSM Full Planet which has
     some technical challenges relative to the regular OSM Planet file. Primarily,
-    Full Planet is big. As of 2011-04-18, the file is about 473GB uncompressed
-    and 26GB compressed in bz2. It also does not have any line breaks.
+    Full Planet History is big. As of 2024-04-24, the file is about 212GB 
+    compressed in bz2 format. It also does not have any line breaks.
 
     OSMReader tranparently handles text .osm, .bz2 and .gz formats.
     it provides two means of traversing the file - tag by tag and object by object
 
     All other scripts here depend on this class.
 
-osm_chunker.py - simply runs through the OSM file and creates 4-5 new ones 
-    containing just the nodes, just the ways, just the changesets, etc.
-    This helps reduce the size of the files necessary for the other scripts.
+osm_chunker.py - Not updated yet, definitely b0rk3d.
 
-osm_fpextract.py - works on smaller files but runs out of memory on big files.
+osm_fpextract.py -Updating, definitely b0rk3d 
+  
+     works on smaller files but runs out of memory on big files.
     takes two passes to generate a spatial and/or temporal extract of full planet
 
-osm2sqlite.py - imports the specified planet file into an sqlite3 database
+osm2sqlite.py - just a placeholder (copy of old very b0rk3d osm_fpextract.py)
 
-osm2fgdb.py - imports the specified file into ArcGIS File Geodatabase
+osm2fgdb.py - bork3d and likely to remain that way. Does anyone use FileGeoDatabaseses with OSM data?
