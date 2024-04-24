@@ -11,7 +11,7 @@ try:
     infile = open(sys.argv[1], "r")
     
 except:
-    print "Unable to open " + sys.argv[1]
+    print("Unable to open " + sys.argv[1])
     sys.exit(-1)
     
 fcount = 0
@@ -38,7 +38,7 @@ for line in infile:
         fcount += 1
         outfile.close()
 
-        print "Files: {:05d}   Nodes: {:d}".format(fcount, lcount)
+        print("Files: {:05d}   Nodes: {:d}".format(fcount, lcount))
         
         ofname = sys.argv[1] + '.{:05d}'.format(fcount)
         outfile = open(ofname, "w")
@@ -49,9 +49,9 @@ outfile.close()
 
 infile.close()
 
-print "Split " + str(lcount) + " lines from " + sys.argv[1] + " into " + str(fcount+1) + " files."
+print("Split " + str(lcount) + " lines from " + sys.argv[1] + " into " + str(fcount+1) + " files.")
 
 finish = time.clock()
-print "Took " + str(finish - start) + " seconds."
+print("Took " + str(finish - start) + " seconds.")
 
     
