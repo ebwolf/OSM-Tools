@@ -1,5 +1,14 @@
-2024 Update: Cleaning up, getting working with Python 3.8, and pylinting
-
+2024-04-24 Update: Cleaning up, getting working with Python 3.8, and pylinting
+2024-04-25 Debugging. Realized 2 things: osm_reader needs a way to better inspect a file.
+           Warn the user if it is a multistream bz2 file. Right now program just fails to generate output. 
+           Warn the user if missing expected tags (like changesets). Right now program just raises an exception.
+           Warn the user about possible memory issues:
+               1. Can it run entirely in RAM
+               2. Will it need to swap to disk (slow, but will work eventually)
+               3. Will it run out of memory entirely.
+               These states can be guestimated by checking the amount of physical RAM, total RAM
+               And looking at the number of objects to be included. 
+               
 This is a set of tools specfically designed for working with the OSM Full Planet
 file. The tools are designed to work with a fairly stock Python3 install, 
 maybe not the version installed with Esri products. I don't have access to those any more.

@@ -60,10 +60,13 @@ class OsmReader:
         try:
             # Automatically handle bz2/gz and plain osm/xml as input files
             if self.ext == '.bz2':
+                print("Opening BZ2 file" + filename)
                 self.fptr = bz2.BZ2File(filename, 'r')
             elif self.ext == '.gz':
+                print("Opening gz file" + filename)
                 self.fptr = gzip.open(filename, 'r')
             else:  # self.ext == '.osm':
+                print("Opening other file" + filename)
                 self.fptr = open(filename, mode='rt', encoding="utf-8")
         except:
             print("Error opening " + filename + ".")
@@ -152,6 +155,7 @@ class OsmReader:
             self.buffer_count += 1
 
             self.bytes_read = self.bytes_read + len(newb)
+            print ("Bytes read:" + str(self.bytes_read))
 
             # Copy the end of the buffer to head, tack on the new stuff
             self.buffer = self.buffer[self.buffer_pos:] + newb

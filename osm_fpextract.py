@@ -82,7 +82,7 @@
 # D:\GNIS_OSM\full-planet-110115-1800.osm.bz2 -72 -71 42 41
 #
 # Hawaii - just Oahu
-# -i hawaii.osm.bz2 -l -158.29 -r -157.661 -t 21.73 -b 21.2 -e 2009-01-01
+# -i ../osmdata/hawaii.osm.bz2 -l -158.29 -r -157.661 -t 21.73 -b 21.2 -e 2009-01-01
 # -i test.osm -l -158.29 -r -157.661 -t 21.73 -b 21.2 -e 2009-01-01
 
 # Import modules
@@ -200,7 +200,6 @@ obj_count = 0
 try:
     # Input is maybe a very big file
     inputfile = OsmReader(inFile)
-
 except:
     print("Failed to initialize OSMReader")
     sys.exit(-1)
@@ -295,8 +294,8 @@ try:
 
     del inputfile
 
-except Exception as ErrorDesc:
-    print("Step 1 Failed : " + type(ErrorDesc))
+except Exception as Err:
+    print("Step 1 Failed : " + type(Err.message))
     print("Line " + str(inputfile.line_count) +
           ":" + inputfile.get_next_tag())
     print("Bytes read: " + str(inputfile.get_bytes_read()))
